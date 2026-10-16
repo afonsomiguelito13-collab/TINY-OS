@@ -1,1 +1,1 @@
-# TINY-OS
+TinyOS - mini OS em Python pro Android
