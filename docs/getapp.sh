@@ -1,26 +1,36 @@
-cat > ~/TINY-OS/getapp.sh << 'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
 
 # ============================================================
 #  TinyOS - App Store CLI (getapp.sh)
+#  Localizado em: docs/getapp.sh
 # ============================================================
 
-REPO_JSON_URL="https://raw.githubusercontent.com/afonsomiguelito13-collab/TINY-OS/main/repo.json"
+# URL base do GitHub (apontando pra pasta docs)
+REPO_JSON_URL="https://raw.githubusercontent.com/afonsomiguelito13-collab/TINY-OS/main/docs/repo.json"
+TINYOS_DIR="$HOME/TINY-OS"
+
 VERDE='\033[0;32m'
 VERMELHO='\033[0;31m'
 CIANO='\033[0;36m'
-AMARELO='\033[0;33m'
 NEGRITO='\033[1m'
 RESET='\033[0m'
 
 APP_NAME="$1"
 TMP_JSON="$PREFIX/tmp/tinyos_repo.json"
 
+# Verifica se o TinyOS tá instalado
+if [ ! -d "$TINYOS_DIR" ]; then
+    echo -e "${VERMELHO}Erro: TinyOS nao encontrado em $TINYOS_DIR.${RESET}"
+    echo "Instale o TinyOS primeiro rodando o install.sh"
+    exit 1
+fi
+
 echo -e "${CIANO}Buscando lista de apps no servidor...${RESET}"
 curl -sSL "$REPO_JSON_URL" -o "$TMP_JSON"
 
-if [ ! -s "$TMP_JSON" ]; then
+if [ ! -s "$TMP_JSON" ] || grep -q "404: Not Found" "$TMP_JSON"; then
     echo -e "${VERMELHO}Erro: Nao foi possivel conectar a App Store.${RESET}"
+    rm -f "$TMP_JSON"
     exit 1
 fi
 
@@ -32,7 +42,6 @@ if [ -z "$APP_NAME" ]; then
     echo "=========================================="
     echo -e "${RESET}"
     
-    # Usa Python pra ler o JSON bonitinho
     python3 -c "
 import json
 with open('$TMP_JSON') as f:
@@ -51,7 +60,6 @@ fi
 # Se passou o nome, BUSCA e INSTALA
 echo -e "${CIANO}Procurando '$APP_NAME'...${RESET}"
 
-# Extrai a URL do app usando Python
 APP_URL=$(python3 -c "
 import json
 try:
@@ -72,7 +80,7 @@ if [ -z "$APP_URL" ]; then
 fi
 
 echo -e "${VERDE}Encontrado! Baixando...${RESET}"
-ARQUIVO_LOCAL="$HOME/TINY-OS/$APP_NAME.ty"
+ARQUIVO_LOCAL="$TINYOS_DIR/$APP_NAME.ty"
 curl -sSL "$APP_URL" -o "$ARQUIVO_LOCAL"
 
 if [ ! -s "$ARQUIVO_LOCAL" ]; then
@@ -81,7 +89,10 @@ if [ ! -s "$ARQUIVO_LOCAL" ]; then
     exit 1
 fi
 
-cd "$HOME/TINY-OS" || exit 1
+# Entra na pasta do TinyOS pra rodar o ty
+cd "$TINYOS_DIR" || exit 1
+
+# Instala e roda
 ./ty install "$ARQUIVO_LOCAL"
 rm -f "$ARQUIVO_LOCAL" "$TMP_JSON"
 
@@ -90,6 +101,3 @@ read -p "Deseja rodar '$APP_NAME' agora? (s/N) " resp
 if [ "$resp" = "s" ] || [ "$resp" = "S" ]; then
     ./ty run "$APP_NAME"
 fi
-EOF
-
-chmod +x ~/TINY-OS/getapp.sh
