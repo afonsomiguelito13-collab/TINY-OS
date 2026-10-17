@@ -5,7 +5,7 @@
             "version": "1.0.0",
             "author": "TinyOS Team",
             "description": "Calculadora grafica com interface X11.",
-            "url": "https://raw.githubusercontent.com/afonsomiguelito13-collab/TINY-OS/main/examples/calculadora.ty"
+            "url": "https://raw.githubusercontent.com/afonsomiguelito13-collab/TINY-OS/main/docs/examples/calculadora/calculadora.ty"
         }
     ]
 }
