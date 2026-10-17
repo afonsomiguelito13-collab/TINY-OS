@@ -6,13 +6,6 @@
             "author": "TinyOS Team",
             "description": "Calculadora grafica com interface X11.",
             "url": "https://raw.githubusercontent.com/afonsomiguelito13-collab/TINY-OS/main/examples/calculadora.ty"
-        },
-        {
-            "name": "relogio",
-            "version": "1.0.0",
-            "author": "Comunidade",
-            "description": "Relogio simples para o desktop.",
-            "url": "https://raw.githubusercontent.com/NAOAPROVADO/relogio-repo/main/relogio.ty"
         }
     ]
 }
