@@ -1,14 +1,7 @@
+cat > ~/getapp.sh << 'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
 
-# ============================================================
-#  TinyOS - App Store CLI (getapp.sh)
-#  Localizado em: docs/getapp.sh
-# ============================================================
-
-# URL base do GitHub (apontando pra pasta docs)
-REPO_JSON_URL="https://raw.githubusercontent.com/afonsomiguelito13-collab/TINY-OS/main/docs/repo.json"
-TINYOS_DIR="$HOME/TINY-OS"
-
+REPO_MAIN="https://raw.githubusercontent.com/afonsomiguelito13-collab/TINY-OS/main"
 VERDE='\033[0;32m'
 VERMELHO='\033[0;31m'
 CIANO='\033[0;36m'
@@ -18,23 +11,24 @@ RESET='\033[0m'
 APP_NAME="$1"
 TMP_JSON="$PREFIX/tmp/tinyos_repo.json"
 
-# Verifica se o TinyOS tá instalado
-if [ ! -d "$TINYOS_DIR" ]; then
-    echo -e "${VERMELHO}Erro: TinyOS nao encontrado em $TINYOS_DIR.${RESET}"
-    echo "Instale o TinyOS primeiro rodando o install.sh"
-    exit 1
+echo -e "${CIANO}Buscando lista de apps no servidor...${RESET}"
+
+# Tenta buscar na raiz
+curl -sSL "$REPO_MAIN/repo.json" -o "$TMP_JSON"
+
+# Se não achar na raiz, tenta na pasta docs
+if grep -q "404: Not Found" "$TMP_JSON" || [ ! -s "$TMP_JSON" ]; then
+    curl -sSL "$REPO_MAIN/docs/repo.json" -o "$TMP_JSON"
 fi
 
-echo -e "${CIANO}Buscando lista de apps no servidor...${RESET}"
-curl -sSL "$REPO_JSON_URL" -o "$TMP_JSON"
-
-if [ ! -s "$TMP_JSON" ] || grep -q "404: Not Found" "$TMP_JSON"; then
-    echo -e "${VERMELHO}Erro: Nao foi possivel conectar a App Store.${RESET}"
+# Se ainda não achou, dá erro
+if grep -q "404: Not Found" "$TMP_JSON" || [ ! -s "$TMP_JSON" ]; then
+    echo -e "${VERMELHO}Erro: Nao foi possivel encontrar o repo.json no servidor.${RESET}"
     rm -f "$TMP_JSON"
     exit 1
 fi
 
-# Se nao passou o nome do app, LISTA todos
+# Se não passou o nome do app, LISTA os apps
 if [ -z "$APP_NAME" ]; then
     echo -e "${NEGRITO}"
     echo "=========================================="
@@ -69,8 +63,7 @@ try:
             if app['name'] == '$APP_NAME':
                 print(app['url'])
                 break
-except:
-    pass
+except: pass
 ")
 
 if [ -z "$APP_URL" ]; then
@@ -80,19 +73,17 @@ if [ -z "$APP_URL" ]; then
 fi
 
 echo -e "${VERDE}Encontrado! Baixando...${RESET}"
-ARQUIVO_LOCAL="$TINYOS_DIR/$APP_NAME.ty"
+ARQUIVO_LOCAL="$HOME/TINY-OS/$APP_NAME.ty"
 curl -sSL "$APP_URL" -o "$ARQUIVO_LOCAL"
 
-if [ ! -s "$ARQUIVO_LOCAL" ]; then
-    echo -e "${VERMELHO}Erro: Falha no download do pacote.${RESET}"
+if [ ! -s "$ARQUIVO_LOCAL" ] || grep -q "404: Not Found" "$ARQUIVO_LOCAL"; then
+    echo -e "${VERMELHO}Erro: Falha no download do pacote .ty.${RESET}"
+    echo "O link no repo.json pode estar errado."
     rm -f "$ARQUIVO_LOCAL" "$TMP_JSON"
     exit 1
 fi
 
-# Entra na pasta do TinyOS pra rodar o ty
-cd "$TINYOS_DIR" || exit 1
-
-# Instala e roda
+cd "$HOME/TINY-OS" || exit 1
 ./ty install "$ARQUIVO_LOCAL"
 rm -f "$ARQUIVO_LOCAL" "$TMP_JSON"
 
@@ -101,3 +92,6 @@ read -p "Deseja rodar '$APP_NAME' agora? (s/N) " resp
 if [ "$resp" = "s" ] || [ "$resp" = "S" ]; then
     ./ty run "$APP_NAME"
 fi
+EOF
+
+chmod +x ~/getapp.sh
